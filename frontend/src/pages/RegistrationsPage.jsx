@@ -14,7 +14,7 @@ import {
   getSummary,
   getRegistrationById,
   createRegistration,
-} from "../api/sample-data";
+} from "../api/registrationsApi";
 
 export default function RegistrationsPage() {
   const [summary, setSummary] = useState(null);
