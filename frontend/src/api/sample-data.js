@@ -97,3 +97,65 @@ export async function getSummary() {
     totalFees,
   };
 }
+export async function getRegistrationById(id) {
+  await delay(200);
+  const found = SAMPLE_REGISTRATIONS.find((r) => r.id === id);
+  if (!found) throw new Error("Registration not found");
+  return found;
+}
+
+export async function createRegistration(payload) {
+  await delay(300);
+
+  // Simulate 400 Validation Errors
+  const errors = {};
+  if (!payload.participantName?.trim()) errors.participantName = ["Participant name is required."];
+  if (!payload.contactNumber?.trim()) errors.contactNumber = ["Contact number is required."];
+  if (!payload.email?.trim() || !payload.email.includes("@")) errors.email = ["Valid email is required."];
+  if (!payload.carMakeModel?.trim()) errors.carMakeModel = ["Car make/model is required."];
+  if (!payload.plateNumber?.trim()) errors.plateNumber = ["Plate number is required."];
+
+  if (Object.keys(errors).length > 0) {
+    const err = new Error("Validation failed");
+    err.status = 400;
+    err.errors = errors;
+    throw err;
+  }
+
+  // Simulate 409 Duplicate Plate Error
+  const duplicate = SAMPLE_REGISTRATIONS.some(
+    (r) => r.plateNumber.toLowerCase().replace(/\s+/g, "") === payload.plateNumber.toLowerCase().replace(/\s+/g, "")
+  );
+  if (duplicate) {
+    const err = new Error("Duplicate plate number");
+    err.status = 409;
+    err.field = "plateNumber";
+    err.message = `Plate number "${payload.plateNumber}" is already registered.`;
+    throw err;
+  }
+
+  const nextNum = String(SAMPLE_REGISTRATIONS.length + 1).padStart(4, "0");
+  const fee = FEES[payload.registrationType] || 1500;
+  const paid = Number(payload.amountPaid) || 0;
+  const paymentStatus = paid === 0 ? "Unpaid" : paid < fee ? "Partial" : "Paid";
+
+  const newRecord = {
+    id: crypto.randomUUID(),
+    registrationNumber: `CS27-${nextNum}`,
+    registrationDate: new Date().toISOString(),
+    participantName: payload.participantName.trim(),
+    contactNumber: payload.contactNumber.trim(),
+    email: payload.email.trim(),
+    address: payload.address?.trim() || "Sorsogon City",
+    carMakeModel: payload.carMakeModel.trim(),
+    plateNumber: payload.plateNumber.trim().toUpperCase(),
+    registrationType: payload.registrationType,
+    status: "Pending",
+    registrationFee: fee,
+    amountPaid: paid,
+    paymentStatus,
+  };
+
+  SAMPLE_REGISTRATIONS.unshift(newRecord);
+  return newRecord;
+}

@@ -18,3 +18,38 @@ export async function getSummary() {
   if (!response.ok) throw new Error("Failed to fetch summary");
   return response.json();
 }
+export async function getRegistrationById(id) {
+  const response = await fetch(`${BASE_URL}/api/registrations/${id}`);
+  if (!response.ok) throw new Error("Failed to fetch registration details");
+  return response.json();
+}
+
+export async function createRegistration(payload) {
+  const response = await fetch(`${BASE_URL}/api/registrations`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+
+  if (!response.ok) {
+    const data = await response.json().catch(() => ({}));
+    const err = new Error(data.title || data.message || "Failed to create registration");
+    err.status = response.status;
+    
+    if (response.status === 400 && data.errors) {
+      const normalized = {};
+      for (const [key, val] of Object.entries(data.errors)) {
+        const camelKey = key.charAt(0).toLowerCase() + key.slice(1);
+        normalized[camelKey] = Array.isArray(val) ? val : [val];
+      }
+      err.errors = normalized;
+    }
+    if (response.status === 409) {
+      err.field = "plateNumber";
+      err.message = data.detail || data.message || "This plate number is already registered.";
+    }
+    throw err;
+  }
+
+  return response.json();
+}
