@@ -1,13 +1,20 @@
 import { useState, useEffect, useCallback } from "react";
-import { Car } from "lucide-react";
+import { Car, Plus } from "lucide-react";
 import { useDebounce } from "../hooks/useDebounce";
 import KpiCards from "../components/KpiCards";
 import RegistrationFilters from "../components/RegistrationFilters";
 import RegistrationTable from "../components/RegistrationTable";
 import Pagination from "../components/Pagination";
+import NewRegistrationModal from "../components/NewRegistrationModal";
+import RegistrationDetailsModal from "../components/RegistrationDetailsModal";
 
 // Switch between "sample-data" and "registrationsApi"
-import { getRegistrations, getSummary } from "../api/sample-data";
+import {
+  getRegistrations,
+  getSummary,
+  getRegistrationById,
+  createRegistration,
+} from "../api/sample-data";
 
 export default function RegistrationsPage() {
   const [summary, setSummary] = useState(null);
@@ -26,6 +33,10 @@ export default function RegistrationsPage() {
   const [pageSize, setPageSize] = useState(10);
   const [totalCount, setTotalCount] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
+
+  // Modals
+  const [isNewModalOpen, setIsNewModalOpen] = useState(false);
+  const [selectedId, setSelectedId] = useState(null);
 
   const fetchSummaryData = useCallback(async () => {
     setSummaryLoading(true);
@@ -68,7 +79,6 @@ export default function RegistrationsPage() {
     fetchRegistrationsData();
   }, [fetchRegistrationsData]);
 
-  // Reset to page 1 whenever filters change
   const handleSearchChange = (val) => {
     setSearch(val);
     setPage(1);
@@ -92,6 +102,12 @@ export default function RegistrationsPage() {
     setPage(1);
   };
 
+  const handleRegistrationCreated = () => {
+    setPage(1);
+    fetchSummaryData();
+    fetchRegistrationsData();
+  };
+
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900">
       {/* Top Navbar */}
@@ -106,9 +122,19 @@ export default function RegistrationsPage() {
               <p className="text-xs text-slate-500">AutoVista Events • Registration Dashboard</p>
             </div>
           </div>
-          <span className="text-xs font-medium px-2.5 py-1 bg-slate-100 text-slate-600 rounded-md">
-            Sorsogon City Coliseum
-          </span>
+
+          <div className="flex items-center gap-3">
+            <span className="hidden sm:inline-block text-xs font-medium px-2.5 py-1 bg-slate-100 text-slate-600 rounded-md">
+              Sorsogon City Coliseum
+            </span>
+            <button
+              onClick={() => setIsNewModalOpen(true)}
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors shadow-xs"
+            >
+              <Plus className="w-4 h-4" />
+              New Registration
+            </button>
+          </div>
         </div>
       </header>
 
@@ -133,6 +159,7 @@ export default function RegistrationsPage() {
             error={error}
             onRetry={fetchRegistrationsData}
             onClearFilters={handleClearFilters}
+            onSelectRow={setSelectedId}
           />
 
           {!error && (
@@ -148,6 +175,20 @@ export default function RegistrationsPage() {
           )}
         </section>
       </main>
+
+      {/* Modals */}
+      <NewRegistrationModal
+        isOpen={isNewModalOpen}
+        onClose={() => setIsNewModalOpen(false)}
+        onCreate={createRegistration}
+        onSuccess={handleRegistrationCreated}
+      />
+
+      <RegistrationDetailsModal
+        registrationId={selectedId}
+        onClose={() => setSelectedId(null)}
+        fetchById={getRegistrationById}
+      />
     </div>
   );
 }

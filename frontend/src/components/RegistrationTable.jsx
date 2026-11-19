@@ -1,6 +1,6 @@
 import StatusBadge from "./StatusBadge";
 import PaymentBadge from "./PaymentBadge";
-import { AlertTriangle, RefreshCw, SearchX } from "lucide-react";
+import { AlertTriangle, RefreshCw, SearchX, Eye } from "lucide-react";
 
 const formatDate = (isoString) => {
   const date = new Date(isoString);
@@ -17,7 +17,7 @@ const formatDate = (isoString) => {
 const formatPhp = (val) =>
   new Intl.NumberFormat("en-PH", { style: "currency", currency: "PHP" }).format(val || 0);
 
-export default function RegistrationTable({ items, loading, error, onRetry, onClearFilters }) {
+export default function RegistrationTable({ items, loading, error, onRetry, onClearFilters, onSelectRow }) {
   if (error) {
     return (
       <div className="py-12 px-4 text-center border border-red-200 bg-red-50/50 rounded-lg">
@@ -49,20 +49,21 @@ export default function RegistrationTable({ items, loading, error, onRetry, onCl
             <th className="py-3 px-4">Status</th>
             <th className="py-3 px-4 text-right">Fee / Paid</th>
             <th className="py-3 px-4">Payment</th>
+            <th className="py-3 px-4 text-center">Details</th>
           </tr>
         </thead>
         <tbody className="divide-y divide-slate-200 text-sm bg-white">
           {loading ? (
             [...Array(5)].map((_, idx) => (
               <tr key={idx} className="animate-pulse">
-                <td colSpan={8} className="py-4 px-4">
+                <td colSpan={9} className="py-4 px-4">
                   <div className="h-5 bg-slate-100 rounded w-full" />
                 </td>
               </tr>
             ))
           ) : items.length === 0 ? (
             <tr>
-              <td colSpan={8} className="py-12 px-4 text-center">
+              <td colSpan={9} className="py-12 px-4 text-center">
                 <SearchX className="w-8 h-8 text-slate-400 mx-auto mb-2" />
                 <p className="text-slate-600 font-medium mb-3">No registrations match your filters</p>
                 <button
@@ -75,7 +76,11 @@ export default function RegistrationTable({ items, loading, error, onRetry, onCl
             </tr>
           ) : (
             items.map((reg) => (
-              <tr key={reg.id} className="hover:bg-slate-50/80 transition-colors">
+              <tr
+                key={reg.id}
+                onClick={() => onSelectRow(reg.id)}
+                className="hover:bg-blue-50/40 cursor-pointer transition-colors"
+              >
                 <td className="py-3.5 px-4 font-mono font-semibold text-slate-900 whitespace-nowrap">
                   {reg.registrationNumber}
                 </td>
@@ -101,6 +106,19 @@ export default function RegistrationTable({ items, loading, error, onRetry, onCl
                 </td>
                 <td className="py-3.5 px-4">
                   <PaymentBadge paymentStatus={reg.paymentStatus} />
+                </td>
+                <td className="py-3.5 px-4 text-center">
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onSelectRow(reg.id);
+                    }}
+                    aria-label={`View details for ${reg.registrationNumber}`}
+                    className="p-1.5 text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                  >
+                    <Eye className="w-4 h-4" />
+                  </button>
                 </td>
               </tr>
             ))
